@@ -29,12 +29,13 @@ function _update60()
 	t+=1
 	_upd()
 	do_float()
+	update_hp_wind()
 end
 
 function _draw()
 	_drw()
 	draw_wind()
-	update_hp_wind()
+
 	check_fade()
 	--debugging system
 	cursor(4,4)
@@ -74,10 +75,14 @@ function startgame()
 	float={}
 	talkwind=nil
 
+	--fog of war
+	fog=blank_map(1) --fill the map with fog by default
+
 	hp_wind=addwind(5,5,28,13, {})
 
 	_upd=update_game
 	_drw=draw_game
+	unfog()
 end
 -->8
 --updates
@@ -184,6 +189,14 @@ function draw_game()
 	end
 	draw_mob(p_mob)
 
+	for x=0,15 do
+		for y=0,15 do
+			if fog[x][y]==1 then
+				drawrect(x*8,y*8,8,8,0)
+			end
+		end
+	end
+
 	for f in all(float) do
 		oprint8(f.txt,f.x,f.y,f.c,0)
 	end
@@ -273,6 +286,30 @@ function fade_out(spd, _wait)
 	until fadeperc==1
 	wait(_wait)
 end
+
+
+function blank_map(_dflt)
+	local ret={}
+	if(_dflt==nil) _dflt=0
+
+	for x=0,15 do
+		ret[x]={}
+		for y=0,15 do
+			ret[x][y]=_dflt
+		end
+	end
+	return ret
+end
+
+function unfog()
+	for x=0,15 do
+		for y=0,15 do
+			if los(p_mob.x,p_mob.y,x,y) then 
+				fog[x][y]==0
+			end
+		end
+	end
+end
 -->8
 --gameplay
 
@@ -302,6 +339,7 @@ function moveplayer(dx,dy)
 				hit_mob(p_mob,mob)
 			end
 	end
+	unfog()
 end
 
 function trig_bump(tle,destx,desty)
@@ -371,6 +409,8 @@ function check_end()
 		_upd=update_gameover
 		_drw=draw_gameover
 		fade_out(0.02)
+		--reload the map on death
+		--reload(0x2000,0x2000,0x1000)
 		return false
 	end
 	return true
@@ -580,11 +620,16 @@ end
 ------
 
 function do_ai()
+	local moving=false
 	--loop through all the mobs
 	for m in all(mob) do
 		if m != p_mob then
 				m.mov=nil
-				m.task(m)
+				moving=m.task(m)
+		end
+		if moving then
+			_upd=update_ai_turn
+			p_t=0
 		end
 	end
 end
@@ -595,7 +640,9 @@ function ai_wait(m)
 		m.task=ai_attack
 		m.tx,m.ty=p_mob.x,p_mob.y
 		add_float("!",m.x*8+2,m.y*8, 10)
+		return true
 	end
+	return false
 end
 
 function ai_attack(m)
@@ -605,6 +652,7 @@ function ai_attack(m)
 		mob_bump(m,dx,dy)
 		hit_mob(m,p_mob)
 		sfx(57)
+		return true
 	else
 		--move towards player
 		--best distance, bestx and besty
@@ -630,11 +678,11 @@ function ai_attack(m)
 			end
 		end
 		mob_walk(m,bx,by)
-	_upd=update_ai_turn
+		return true
 	--todo: re-aquire target
-	p_t=0
 		end
 	end
+	return false
 end
 __gfx__
 000000006660666000000000000000000000000000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a050000000aaaaaaaa
