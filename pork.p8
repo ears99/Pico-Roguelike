@@ -107,7 +107,7 @@ function update_pturn()
 	dobuttbuff()
 	p_t=min(p_t+0.125,1)
 
-	p_mob.mov(p_mob,p_t)
+	p_mob.mov(p_mob)
 
 	if p_t==1 then
 		_upd=update_game
@@ -123,7 +123,7 @@ function update_ai_turn()
 	p_t=min(p_t+0.125,1)
 	for m in all(mob) do
 		if m!=p_mob and m.mov then
-			m.mov(m,p_t)
+			m.mov(m)
 		end
 	end
 	if p_t==1 then
@@ -182,12 +182,9 @@ function draw_game()
 	end
 
 	--reguar mobs
-	for m in all(mob) do
-		if m!=p_mob then
-			draw_mob(m)
-		end
+	for i=#mob,1,-1 do
+		draw_mob(mob[i])
 	end
-	draw_mob(p_mob)
 
 	for x=0,15 do
 		for y=0,15 do
@@ -253,7 +250,7 @@ function do_fade()
 	local p, kmax,col,k=flr(mid(0,fadeperc,1)*100)
 	for j=1,15 do
 		col=j
-		kmax=flr((p+(j*1.46))/22)
+		kmax=flr((p+j*1.46)/22)
 		for k=1,kmax do
 			col=dpal[col]
 		end
@@ -344,13 +341,13 @@ function moveplayer(dx,dy)
 		_upd=update_pturn
 
 		local mob=get_mob(destx,desty)
-			if mob==false then
-				if fget(tle,1) then
-					trig_bump(tle, destx,desty)
-				end
-			else
+			if mob then
 				sfx(58)
 				hit_mob(p_mob,mob)
+				else
+					if fget(tle,1) then
+						trig_bump(tle, destx,desty)
+					end
 			end
 	end
 	unfog()
@@ -392,9 +389,9 @@ function is_walkable(x,y,mode)
 	if mode=="sight" then
 		return not fget(tle,2) --doors and walls have this flag set
 		else
-			if fget(tle,0)==false then
+			if not fget(tle,0) then
 				if mode=="checkmobs" then
-					return get_mob(x,y)==false
+					return not get_mob(x,y)
 				end
 			return true
 		end
@@ -440,31 +437,26 @@ function los(x1,y1,x2,y2)
 	local frst,sx,sy,dx,dy=true
 	if dist(x1,y1,x2,y2)==1 then return true end
 	if x1<x2 then
-		sx=1
-		dx=x2-x1
+		sx,dx=1,x2-x1
 	else
-		sx=-1
-		dx=x1-x2
+		sx,dx=-1,x1-x2
 	end
 	if y1<y2 then
-		sy=1
-		dy=y2-y1
+		sy,dy=1,y2-y1
 	else
-		sy=-1
-		dy=y1-y2
+		sy,dy=-1,y1-y2
 	end
-	local err,e2= dx-dy, nil
+	local err,e2= dx-dy
 
 	while not(x1==x2 and y1==y2) do
 		if not frst and is_walkable(x1,y1, "sight")==false then return false end
-			frst=false
-			e2=err+err
+			e2,frst=err+err,false
 			if e2>-dy then
-				err=err-dy
+				err-=dy
 				x1=x1+sx
 			end
 			if e2<dx then
-				err=err+dx
+				err+=dx
 				y1=y1+sy
 			end
 	end
@@ -495,7 +487,7 @@ function draw_wind()
 		end
 		clip()
 		--window with a duration
-		if w.dur !=nil then
+		if w.dur then
 			w.dur -= 1
 		if w.dur <= 0 then
 			local dif=wh/5
@@ -619,18 +611,19 @@ end
 ------------------
 --mob animations--
 ------------------
-function ani_walk(mob,a_t)
-	mob.ox=mob.sox*(1-a_t)
-	mob.oy=mob.soy*(1-a_t)
+function ani_walk(mb)
+	local tme=1-p_t
+	mb.ox=mb.sox*tme
+	mb.oy=mb.soy*tme
 end
 
-function ani_bump(mob,a_t)
-	local tme=a_t
-	if a_t>0.5 then
-		tme=1-a_t
+function ani_bump(mb)
+	local tme=p_t
+	if p_t>0.5 then
+		tme=1-p_t
 	end
-	mob.ox=mob.sox*tme
-	mob.oy=mob.soy*tme
+	mb.ox=mb.sox*tme
+	mb.oy=mb.soy*tme
 end
 
 
