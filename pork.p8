@@ -631,8 +631,9 @@ function ai_attack(m)
 		end
 		mob_walk(m,bx,by)
 	_upd=update_ai_turn
-	--todo: re-aquire target  
+	--todo: re-aquire target
 	p_t=0
+		end
 	end
 end
 __gfx__
