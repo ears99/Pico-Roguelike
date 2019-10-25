@@ -286,8 +286,10 @@ function fade_out(spd, _wait)
 	until fadeperc==1
 	wait(_wait)
 end
-
-
+----------------
+-- fog of war --
+----------------
+--yellow bit flag sets a tile to blocking line of sight
 function blank_map(_dflt)
 	local ret={}
 	if(_dflt==nil) _dflt=0
@@ -304,10 +306,21 @@ end
 function unfog()
 	for x=0,15 do
 		for y=0,15 do
-			if los(p_mob.x,p_mob.y,x,y) then 
-				fog[x][y]=0
+			if los(p_mob.x,p_mob.y,x,y) then
+				unfog_tile(x,y)
 			end
 		end
+	end
+end
+
+function unfog_tile(x,y)
+	fog[x][y]=0
+	if is_walkable(x,y,"sight") then
+		for i=1,4 do
+			local tx,ty=x+dirx[i],y+diry[i]
+			if in_bounds(tx,ty) and not is_walkable(tx,ty,"sight") then
+				fog[tx][ty]=0
+			end
 	end
 end
 -->8
@@ -375,12 +388,16 @@ function is_walkable(x,y,mode)
 	--sight is also a mode
 	if in_bounds(x,y) then
 		local tle=mget(x,y)
-		if fget(tle,0)==false then
-			if mode=="checkmobs" then
-				return get_mob(x,y)==false
-			end
+	if mode=="sight" then
+		return not fget(tle,2) --doors and walls have this flag set
+		else
+			if fget(tle,0)==false then
+				if mode=="checkmobs" then
+					return get_mob(x,y)==false
+				end
 			return true
 		end
+	end
 	end
 	return false
 end
@@ -625,12 +642,12 @@ function do_ai()
 	for m in all(mob) do
 		if m != p_mob then
 				m.mov=nil
-				moving=m.task(m)
-		end
+				moving=m.task(m) or moving
+			end
+		end 
 		if moving then
 			_upd=update_ai_turn
 			p_t=0
-		end
 	end
 end
 
