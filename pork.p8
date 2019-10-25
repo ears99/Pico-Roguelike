@@ -321,6 +321,7 @@ function unfog_tile(x,y)
 			if in_bounds(tx,ty) and not is_walkable(tx,ty,"sight") then
 				fog[tx][ty]=0
 			end
+		end
 	end
 end
 -->8
