@@ -334,6 +334,7 @@ end
 
 function is_walkable(x,y,mode)
 	if mode==nil then mode="" end
+	--sight is also a mode
 	if in_bounds(x,y) then
 		local tle=mget(x,y)
 		if fget(tle,0)==false then
@@ -375,6 +376,42 @@ function check_end()
 	return true
 end
 
+
+--line of sight
+function los(x1,y1,x2,y2)
+	local frst,sx,sy,dx,dy=true
+	if dist(x1,y1,x2,y2)==1 then return true end
+	if x1<x2 then
+		sx=1
+		dx=x2-x1
+	else
+		sx=-1
+		dx=x1-x2
+	end
+	if y1<y2 then
+		sy=1
+		dy=y2-y1
+	else
+		sy=-1
+		dy=y1-y2
+	end
+	local err,e2= dx-dy, nil
+
+	while not(x1==x2 and y1==y2) do
+		if not frst and is_walkable(x1,y1, "sight")==false then return false end
+			frst=false
+			e2=err+err
+			if e2>-dy then
+				err=err-dy
+				x1=x1+sx
+			end
+			if e2<dx then
+				err=err+dx
+				y1=y1+sy
+			end
+	end
+	return true
+end
 
 -->8
 --ui
@@ -470,15 +507,16 @@ function add_mob(typ,mx,my)
 		y=my,
 		ox=0,
 		oy=0,
-		sox=0,
-		soy=0,
+		--sox=0,
+		--soy=0,
 		flp=false,
-		mov=nil,
+		--mov=nil,
 		ani={},
 		flash=0,
 		hp=mob_hp[typ],
 		hp_max=mob_hp[typ],
-		atk=mob_atk[typ]
+		atk=mob_atk[typ],
+		task=ai_wait
 	}
 	--loop through mob animations
 	for i = 0,3 do
@@ -540,42 +578,64 @@ end
 ------
 --AI--
 ------
+
 function do_ai()
-	--debugging
-	debug={}
 	--loop through all the mobs
 	for m in all(mob) do
 		if m != p_mob then
 				m.mov=nil
-				if dist(m.x,m.y,p_mob.x,p_mob.y)==1 then
-					--attack player
-					dx,dy=p_mob.x-m.x,p_mob.y-m.y
-					mob_bump(m,dx,dy)
-					hit_mob(m,p_mob)
-					sfx(57)
-				else
-					--move towards player
-					--best distance, bestx and besty
-					local bdst,bx,by=999,0,0
-					--loop through neighboring squares
-					for i = 1,4 do
-						local dx,dy=dirx[i],diry[i]
-						local tx,ty=m.x+dx,m.y+dy
-						if is_walkable(tx,ty,"checkmobs") then
-							local dst=dist(tx,ty,p_mob.x,p_mob.y)
-							if dst<bdst then
-								bdst,bx,by=dst,dx,dy
-							end
-						end
-					end
-			mob_walk(m,bx,by)
-			_upd=update_ai_turn
-			p_t=0
-			end
+				m.task(m)
 		end
 	end
 end
 
+function ai_wait(m)
+	if los(m.x,m.y,p_mob.x,p_mob.y) then
+		--aggro to the player
+		m.task=ai_attack
+		m.tx,m.ty=p_mob.x,p_mob.y
+		add_float("!",m.x*8+2,m.y*8, 10)
+	end
+end
+
+function ai_attack(m)
+	if dist(m.x,m.y,p_mob.x,p_mob.y)==1 then
+		--attack player
+		dx,dy=p_mob.x-m.x,p_mob.y-m.y
+		mob_bump(m,dx,dy)
+		hit_mob(m,p_mob)
+		sfx(57)
+	else
+		--move towards player
+		--best distance, bestx and besty
+		if los(m.x,m.y,p_mob.x,p_mob.y) then
+			m.tx,m.ty=p_mob.x,p_mob.y
+		end
+
+		--de-aggro the monster
+		if m.x==m.tx and m.y==m.ty then
+			m.task=ai_wait
+			add_float("?", m.x*8+2,m.y*8, 10)
+		else
+			local bdst,bx,by=999,0,0
+			--loop through neighboring squares
+			for i = 1,4 do
+				local dx,dy=dirx[i],diry[i]
+				local tx,ty=m.x+dx,m.y+dy
+				if is_walkable(tx,ty,"checkmobs") then
+					local dst=dist(tx,ty,m.tx,m.ty)
+					if dst<bdst then
+						bdst,bx,by=dst,dx,dy
+				end
+			end
+		end
+		mob_walk(m,bx,by)
+	_upd=update_ai_turn
+	--todo: re-aquire target
+	p_t=0
+		end
+	end
+end
 __gfx__
 000000006660666000000000000000000000000000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a050000000aaaaaaaa
 000000000000000000000000000000000000000000000000aaaaaaaa0a000a000a000a00066666600aaaaaa066666660a0aaa0a00000000050500000a0000000
