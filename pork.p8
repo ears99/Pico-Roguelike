@@ -13,9 +13,9 @@ function _init()
 	--mob animations
 	mob_ani={240,192}
 	--mob attributes
-	mob_atk={1,1}
-	mob_hp={5,2}
-
+	mob_atk={1,1} --attack power
+	mob_hp={5,2} --hit points
+	mob_los={4,4} --perception
 	_upd=update_game
 	_drw=draw_game
 
@@ -574,6 +574,7 @@ function add_mob(typ,mx,my)
 		hp=mob_hp[typ],
 		hp_max=mob_hp[typ],
 		atk=mob_atk[typ],
+		los=mob_los[typ]
 		task=ai_wait
 	}
 	--loop through mob animations
@@ -645,7 +646,7 @@ function do_ai()
 				m.mov=nil
 				moving=m.task(m) or moving
 			end
-		end 
+		end
 		if moving then
 			_upd=update_ai_turn
 			p_t=0
@@ -653,7 +654,7 @@ function do_ai()
 end
 
 function ai_wait(m)
-	if los(m.x,m.y,p_mob.x,p_mob.y) then
+	if can_see(m,p_mob) then
 		--aggro to the player
 		m.task=ai_attack
 		m.tx,m.ty=p_mob.x,p_mob.y
@@ -674,7 +675,7 @@ function ai_attack(m)
 	else
 		--move towards player
 		--best distance, bestx and besty
-		if los(m.x,m.y,p_mob.x,p_mob.y) then
+		if can_see(m,p_mob) then
 			m.tx,m.ty=p_mob.x,p_mob.y
 		end
 
@@ -701,6 +702,10 @@ function ai_attack(m)
 		end
 	end
 	return false
+end
+
+function can_see(m1,m2)
+	return dist(m1.x,m1.y,m2.x,m2.y) <= m1.los and los(m1.x,m1.y,m2.x,m2.y)
 end
 __gfx__
 000000006660666000000000000000000000000000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a050000000aaaaaaaa
