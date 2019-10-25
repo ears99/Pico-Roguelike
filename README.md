@@ -1,5 +1,5 @@
 # Pico-Roguelike
-this is the source code for the LazyGameDev's porklike tutorial series on YouTube.
+This is the source code for the LazyGameDev's porklike tutorial series on YouTube.
 
 # Why Porklike?
 Because the main character looks like a pig! (well, sort of...)
