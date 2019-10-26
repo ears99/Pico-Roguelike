@@ -373,7 +373,7 @@ elseif tle==13 then
 	mset(destx,desty,2)
 elseif tle==006 then
 	--stone tablet
-	show_msg({"welcome to porklike","","go deeper to obtain","the golden sausage"})
+	show_t_msg({"welcome to porklike","","go deeper to obtain","the golden sausage"})
 	end
 end
 
@@ -468,6 +468,10 @@ function los(x1,y1,x2,y2)
 	return true
 end
 
+
+---------------
+--pathfinding--
+---------------
 --calculate distance to target
 function calc_dist(tx,ty)
 	local cand,step={},0
@@ -545,7 +549,7 @@ function show_msg(txt,dur)
 end
 
 --text with button
-function show_msg(txt)
+function show_t_msg(txt)
 	talkwind=addwind(16,50,94,#txt*6+7,txt)
 	talkwind.butt=true
 end
@@ -587,11 +591,8 @@ function add_mob(typ,mx,my)
 		x=mx,
 		y=my,
 		ox=0,
-		oy=0,
-		--sox=0,
-		--soy=0,
+		oy=0,		
 		flp=false,
-		--mov=nil,
 		ani={},
 		flash=0,
 		hp=mob_hp[typ],
@@ -733,12 +734,6 @@ end
 function can_see(m1,m2)
 	return dist(m1.x,m1.y,m2.x,m2.y) <= m1.los and los(m1.x,m1.y,m2.x,m2.y)
 end
-
----------------
---pathfinding--
----------------
-
-
 
 
 __gfx__
