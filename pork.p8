@@ -180,6 +180,7 @@ function update_inv()
 	if btnp(4) then
 		_upd=update_game 
 		inv_wind.dur=0
+		stat_wind.dur=0
 	end 
 end
 
@@ -549,8 +550,12 @@ function draw_wind()
 			wx+=6
 		end
 		for i=1,#w.txt do
-			local txt=w.txt[i]
-			print(txt,wx,wy,6)
+			local txt,c=w.txt[i],6
+			if w.col and w.col[i] then
+				c=w.col[i]
+			end 
+			
+			print(txt,wx,wy,c)
 			if i==w.cur then 
 				spr(255, wx-5, wy)
 			end
@@ -632,11 +637,18 @@ function show_inv()
 	add(txt,"--------------")
 	add(txt,"healing potion")
 	add(txt,"magic scroll")
-	add(txt, "...") --empty slot
+	add(txt,"herbs")
+	add(txt, "magic grimoire")
+	add(txt, "...")
+	add(txt, "...")	
 	
 	inv_wind=addwind(5,17,84,62, txt)
 	inv_wind.curmode=true 
-	inv_wind.cur=1
+	inv_wind.cur=3 --cursor position
+	inv_wind.col={6,6,5,6,6,6,6,5,5}
+	
+	--player stat screen 
+	stat_wind=addwind(5,5,84,13, {"atk: 1 	def: 1"})
 end
 
 
