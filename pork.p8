@@ -326,6 +326,13 @@ function unfog_tile(x,y)
 		end
 	end
 end
+
+--get a random number from an array, from 1 to the size of the array
+function get_rnd(arr)
+	return arr[1+flr(rnd(#arr))]
+end
+
+
 -->8
 --gameplay
 
@@ -359,22 +366,22 @@ function moveplayer(dx,dy)
 end
 
 function trig_bump(tle,destx,desty)
-if tle==7 or tle==8 then
-	--vase
-	sfx(59)
-	mset(destx,desty,2)
-elseif tle==10 or tle==12 then
-	--chest
-	sfx(61)
-	mset(destx,desty,tle-1)
-elseif tle==13 then
-	--door
-	sfx(62)
-	mset(destx,desty,2)
-elseif tle==006 then
-	--stone tablet
-	show_t_msg({"welcome to porklike","","go deeper to obtain","the golden sausage"})
-	end
+	if tle==7 or tle==8 then
+		--vase
+		sfx(59)
+		mset(destx,desty,2)
+	elseif tle==10 or tle==12 then
+		--chest
+		sfx(61)
+		mset(destx,desty,tle-1)
+	elseif tle==13 then
+		--door
+		sfx(62)
+		mset(destx,desty,2)
+	elseif tle==006 then
+		--stone tablet
+		show_t_msg({"welcome to porklike","","go deeper to obtain","the golden sausage"})
+		end
 end
 
 function get_mob(x,y)
@@ -710,7 +717,7 @@ function ai_attack(m)
 			add_float("?", m.x*8+2,m.y*8, 10)
 		else
 			
-			local bdst,bx,by=999,0,0
+			local bdst,cand=999,{}
 			calc_dist(m.tx,m.ty)
 			--loop through neighboring squares
 			for i = 1,4 do
@@ -719,12 +726,20 @@ function ai_attack(m)
 				if is_walkable(tx,ty,"checkmobs") then
 					local dst=dist_map[tx][ty]
 					if dst<bdst then
-						bdst,bx,by=dst,dx,dy
+						cand={}
+						bdst=dst
+					end
+					if dst==bdst then
+						add(cand, {x=dx,y=dy})
 				end
 			end
 		end
-		mob_walk(m,bx,by)
-		return true
+		
+		if #cand>0 then
+			local c=get_rnd(cand)
+			mob_walk(m,c.x,c.y)
+			return true
+		end
 	--todo: re-aquire target
 		end
 	end
@@ -734,6 +749,8 @@ end
 function can_see(m1,m2)
 	return dist(m1.x,m1.y,m2.x,m2.y) <= m1.los and los(m1.x,m1.y,m2.x,m2.y)
 end
+
+
 
 
 __gfx__
