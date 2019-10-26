@@ -70,6 +70,11 @@ function startgame()
 
 	p_t=0
 
+	inv,eqp={},{}
+	--eqp[1] - weapon
+	--eqp[2] - armor
+	--eqp[1-6] - inventory
+
 --window/ui
 	wind={}
 	float={}
@@ -164,8 +169,26 @@ function dobutt(butt)
 	if butt<0 then return end
 	if butt<4 then
 		moveplayer(dirx[butt+1],diry[butt+1])
+	elseif butt==5 then 
+		show_inv()
 	end
- -- menu button
+
+
+function update_inv()
+	--inventory
+	move_mnu(inv_wind)
+	if btnp(4) then
+		_upd=update_game 
+		inv_wind.dur=0
+	end 
+end
+
+function move_mnu(wnd)
+	if btnp(2) then
+		wnd.cur = wnd.cur-1
+	elseif btnp(3) then
+		wnd.cur = wnd.cur-1	
+	end
 end
 
 -->8
@@ -522,9 +545,15 @@ function draw_wind()
 		wx+=4
 		wy+=4
 		clip(wx,wy,ww-8,wh-8)
+		if w.curmode then 
+			wx+=6
+		end
 		for i=1,#w.txt do
 			local txt=w.txt[i]
 			print(txt,wx,wy,6)
+			if i==w.cur then 
+				spr(255, wx-5, wy)
+			end
 			wy+=6
 		end
 		clip()
@@ -590,6 +619,27 @@ function update_hp_wind()
 	end
 	hp_wind.y+=(hpy-hp_wind.y)/5
 end
+
+-----------
+--inventory
+-----------
+function show_inv()
+	local txt={}
+	_upd=update_inv
+	add(txt,"steel sword")
+	add(txt,"leather armor")
+	--shift+q for better separator
+	add(txt,"--------------")
+	add(txt,"healing potion")
+	add(txt,"magic scroll")
+	add(txt, "...") --empty slot
+	
+	inv_wind=addwind(5,17,84,62, txt)
+	inv_wind.curmode=true 
+	inv_wind.cur=1
+end
+
+
 -->8
 --mob
 function add_mob(typ,mx,my)
