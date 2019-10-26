@@ -16,6 +16,11 @@ function _init()
 	mob_atk={1,1} --attack power
 	mob_hp={5,2} --hit points
 	mob_los={4,4} --perception
+	
+	
+	--item attributes
+	itm_name={"broad sword","leather armor","red potion"}
+	
 	_upd=update_game
 	_drw=draw_game
 
@@ -69,11 +74,16 @@ function startgame()
 	end
 
 	p_t=0
-
+	
+	--inventory
 	inv,eqp={},{}
 	--eqp[1] - weapon
 	--eqp[2] - armor
 	--eqp[1-6] - inventory
+
+	take_item(1)
+	take_item(2)
+	take_item(3)
 
 --window/ui
 	wind={}
@@ -174,6 +184,9 @@ function dobutt(butt)
 	end
 end
 
+------------
+--inventory
+------------
 function update_inv()
 	--inventory
 	move_mnu(inv_wind)
@@ -629,23 +642,46 @@ end
 --inventory
 -----------
 function show_inv()
-	local txt={}
+	local txt,col={},{}
 	_upd=update_inv
-	add(txt,"steel sword")
-	add(txt,"leather armor")
-	--shift+q for better separator
+	
+	
+	for i 1,2 do 
+		local itm,eqt=eqp[i]
+		if itm then
+			--add item to inventory
+			eqt=add(txt,itm_name[itm])
+			add(col, 6)
+		else
+			if i==1 then 
+				eqt="[weapon]"
+			else
+				eqt="[armor]"
+			end
+			add(col,5)
+		end
+		add(txt, eqt)
+	end
+	
 	add(txt,"--------------")
-	add(txt,"healing potion")
-	add(txt,"magic scroll")
-	add(txt,"herbs")
-	add(txt, "magic grimoire")
-	add(txt, "...")
-	add(txt, "...")	
+	add(col, 6)
+	
+	for i 1,6 do 
+		local itm=inv[i]
+		if itm then
+			--add item to inventory
+			add(txt, itm_name[itm])
+			add(col, 6)
+		else
+			add(txt, "...")
+			add(col,5)
+		end
+	end
 	
 	inv_wind=addwind(5,17,84,62, txt)
 	inv_wind.curmode=true 
 	inv_wind.cur=3 --cursor position
-	inv_wind.col={6,6,5,6,6,6,6,5,5}
+	inv_wind.col=col
 	
 	--player stat screen 
 	stat_wind=addwind(5,5,84,13, {"atk: 1 	def: 1"})
@@ -653,7 +689,7 @@ end
 
 
 -->8
---mob
+--mobs and items
 function add_mob(typ,mx,my)
 	--mob object
 	local m={
@@ -812,8 +848,25 @@ function can_see(m1,m2)
 	return dist(m1.x,m1.y,m2.x,m2.y) <= m1.los and los(m1.x,m1.y,m2.x,m2.y)
 end
 
+---------
+--items--
+---------
+function take_item(itm)
+	local i = check_inv()
+	if i == 0 then return false end
+	inv[i]=itm
+	return true
+end
 
-
+--checks for a free spot in the inventory
+function check_inv()
+	for i=1,6 do
+		if not inv[i] then
+			return i
+		end
+	end
+	return 0 --returns 0 if no slot is free
+end
 
 __gfx__
 000000006660666000000000000000000000000000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a050000000aaaaaaaa
