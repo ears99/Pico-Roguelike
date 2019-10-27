@@ -19,8 +19,9 @@ function _init()
 	
 	
 	--item attributes
-	itm_name={"broad sword","leather armor","red potion"}
-	
+	itm_name={"broad sword","leather armor","red potion","iron spear"}
+	--types of items: weapons, armors, consumables, throwable
+	itm_type={"wep","arm", "con","thr"}
 	_upd=update_game
 	_drw=draw_game
 
@@ -84,7 +85,8 @@ function startgame()
 	take_item(1)
 	take_item(2)
 	take_item(3)
-
+	take_item(4)
+	
 --window/ui
 	wind={}
 	float={}
@@ -189,19 +191,31 @@ end
 ------------
 function update_inv()
 	--inventory
-	move_mnu(inv_wind)
+	move_mnu(curwind)
 	if btnp(4) then
-		_upd=update_game 
-		inv_wind.dur=0
-		stat_wind.dur=0
-	end 
+		if curwind==inv_wind then 
+			_upd=update_game 
+			inv_wind.dur=0
+			stat_wind.dur=0
+		elseif curwind==use_wind then 
+			--canceling the use menu
+			use_wind.dur=0
+			curwind=inv_wind
+		end
+		elseif btnp(5) then
+			if curwind==inv_wind and inv_wind then
+				show_use()
+		elseif curwind==use_wind then
+			--use window confirm
+		end 
+	end
 end
 
 function move_mnu(wnd)
 	if btnp(2) then
-		wnd.cur = max(1,wnd.cur-1)
+		wnd.cur -=1
 	elseif btnp(3) then
-		wnd.cur = min(#wnd.txt,wnd.cur+1)	
+		wnd.cur +=1	
 	end
 	--cursor wrapping
 	wnd.cur=(wnd.cur-1)%#wnd.txt+1
@@ -655,17 +669,13 @@ function show_inv()
 			eqt=add(txt,itm_name[itm])
 			add(col, 6)
 		else
-			if i==1 then 
-				eqt="[weapon]"
-			else
-				eqt="[armor]"
-			end
+			eqt=i==1 and "[weapon]" or "[armor]"
 			add(col,5)
 		end
 		add(txt, eqt)
 	end
 	
-	add(txt,"--------------")
+	add(txt,"……………")
 	add(col, 6)
 	
 	for i=1,6 do 
@@ -681,15 +691,36 @@ function show_inv()
 	end
 	
 	inv_wind=addwind(5,17,84,62, txt)
-	inv_wind.curmode=true 
 	inv_wind.cur=3 --cursor position
 	inv_wind.col=col
 	
 	--player stat screen 
 	stat_wind=addwind(5,5,84,13, {"atk: 1 	def: 1"})
+	--current window variable
+	curwind=inv_wind
 end
 
-
+function show_use()
+	local itm=inv_wind.cur<3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
+	if itm==nil then return end
+	local typ,txt=itm_type[itm],{}
+	
+	if typ=="wep" or typ=="arm" then 
+		add(txt, "equip")
+	end 
+	if typ=="con" then 
+		add(txt, "use")
+	end 
+	if typ=="con" or typ=="thr" then
+		add(txt, "throw")
+	end
+		add(txt, "trash")
+	
+	
+	use_wind=addwind(84,inv_wind.cur*6+11,36,7+#txt*6,txt)
+	use_wind.cur=1
+	curwind=use_wind
+end
 -->8
 --mobs and items
 function add_mob(typ,mx,my)
