@@ -203,6 +203,8 @@ function move_mnu(wnd)
 	elseif btnp(3) then
 		wnd.cur = min(#wnd.txt,wnd.cur+1)	
 	end
+	--cursor wrapping
+	wnd.cur=(wnd.cur-1)%2#wnd.txt+1
 end
 
 -->8
