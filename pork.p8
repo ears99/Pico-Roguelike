@@ -561,7 +561,7 @@ function draw_wind()
 		wx+=4
 		wy+=4
 		clip(wx,wy,ww-8,wh-8)
-		if w.curmode then 
+		if w.cur then 
 			wx+=6
 		end
 		for i=1,#w.txt do
