@@ -19,7 +19,9 @@ function _init()
 	
 	
 	--item attributes
-	itm_name={"broad sword","leather armor","red potion"}
+	itm_name={"broad sword","leather armor","red potion","iron spear","rusty sword"}
+	--item types: weapons, armor, comsumables, throwable
+	itm_type={"wep","arm","com","thr", "wep"}
 	
 	_upd=update_game
 	_drw=draw_game
@@ -84,7 +86,9 @@ function startgame()
 	take_item(1)
 	take_item(2)
 	take_item(3)
-
+	take_item(4)
+	take_item(5)
+	
 --window/ui
 	wind={}
 	float={}
@@ -189,20 +193,34 @@ end
 ------------
 function update_inv()
 	--inventory
-	move_mnu(inv_wind)
+	move_mnu(curwind)
 	if btnp(4) then
-		_upd=update_game 
-		inv_wind.dur=0
-		stat_wind.dur=0
+		if curwind==inv_wind then
+			_upd=update_game 
+			inv_wind.dur=0
+			stat_wind.dur=0
+		elseif curwind==use_wind then 
+			use_wind.dur=0
+			curwind=inv_wind
+		end
+		elseif btnp(5) then 
+			if curwind==inv_wind and inv_wind.cur!=3 then
+				show_use()
+			elseif curwind==use_wind then 
+				--use window confirm
+				trig_use()
+				
+			end
+		end
 	end 
-end
 
 function move_mnu(wnd)
 	if btnp(2) then
-		wnd.cur = max(1,wnd.cur-1)
+		wnd.cur -=1 
 	elseif btnp(3) then
-		wnd.cur = min(#wnd.txt,wnd.cur+1)	
+		wnd.cur +=1 	
 	end
+	wnd.cur=(wnd.cur-1)%#wnd.txt+1
 end
 
 -->8
@@ -559,7 +577,7 @@ function draw_wind()
 		wx+=4
 		wy+=4
 		clip(wx,wy,ww-8,wh-8)
-		if w.curmode then 
+		if w.cur then 
 			wx+=6
 		end
 		for i=1,#w.txt do
@@ -570,7 +588,7 @@ function draw_wind()
 			
 			print(txt,wx,wy,c)
 			if i==w.cur then 
-				spr(255, wx-5, wy)
+				spr(255, wx-5+sin(time()), wy)
 			end
 			wy+=6
 		end
@@ -646,18 +664,15 @@ function show_inv()
 	_upd=update_inv
 	
 	
-	for i 1,2 do 
+	for i=1,2 do 
 		local itm,eqt=eqp[i]
 		if itm then
 			--add item to inventory
 			eqt=add(txt,itm_name[itm])
 			add(col, 6)
 		else
-			if i==1 then 
-				eqt="[weapon]"
-			else
-				eqt="[armor]"
-			end
+			--ternerary operator in Lua...kind of 
+			eqt= i==1 and "[weapon]" or "[armor]"
 			add(col,5)
 		end
 		add(txt, eqt)
@@ -666,7 +681,7 @@ function show_inv()
 	add(txt,"--------------")
 	add(col, 6)
 	
-	for i 1,6 do 
+	for i=1,6 do 
 		local itm=inv[i]
 		if itm then
 			--add item to inventory
@@ -685,8 +700,63 @@ function show_inv()
 	
 	--player stat screen 
 	stat_wind=addwind(5,5,84,13, {"atk: 1 	def: 1"})
+	
+	curwind=inv_wind
 end
 
+function show_use()
+	local itm=inv_wind.cur < 3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
+	if itm==nil then return end
+	local typ,txt=itm_type[itm],{}
+	
+	if typ=="wep" or typ=="arm" then 
+		add(txt, "equip")
+	end
+	if typ=="com" then
+		add(txt, "use")
+	end
+	if typ=="thr" or typ=="com" then
+		add(txt, "throw")
+	end
+	add(txt, "trash")
+	
+	use_wind=addwind(84,inv_wind.cur*6+11,36,7+#txt*6, txt)
+	use_wind.cur=1
+	curwind=use_wind
+end
+
+--options in the use menu
+function trig_use()
+	local verb,i=use_wind.txt[use_wind.cur],inv_wind.cur
+	local itm=i < 3 and eqp[i] or inv[i-3]
+	
+	if verb=="trash" then
+		if i < 3 then
+			eqp[i]=nil
+		else
+			inv[i-3]=nil
+		end
+		
+	elseif verb=="equip" then
+		local slot=2
+		--get the type of the item
+		if itm_type[itm]=="wep" then
+			slot=1
+		end
+		inv[i-3]=eqp[slot]
+		eqp[slot]=itm
+		
+	elseif verb=="use" then
+		
+	elseif verb=="throw" then
+		
+	end
+	
+	use_wind.dur=0
+	inv_wind.dur=0
+	stat_wind.dur=0
+	_upd=update_game
+end
 
 -->8
 --mobs and items
@@ -853,19 +923,21 @@ end
 ---------
 function take_item(itm)
 	local i = check_inv()
-	if i == 0 then return false end
+	if i==0 then 
+		return false
+	end
 	inv[i]=itm
 	return true
 end
 
 --checks for a free spot in the inventory
 function check_inv()
-	for i=1,6 do
+	for i=1,6 do 
 		if not inv[i] then
-			return i
+		return i
 		end
 	end
-	return 0 --returns 0 if no slot is free
+	return 0
 end
 
 __gfx__
