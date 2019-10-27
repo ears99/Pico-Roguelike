@@ -204,7 +204,7 @@ function move_mnu(wnd)
 		wnd.cur = min(#wnd.txt,wnd.cur+1)	
 	end
 	--cursor wrapping
-	wnd.cur=(wnd.cur-1)%2#wnd.txt+1
+	wnd.cur=(wnd.cur-1)%#wnd.txt+1
 end
 
 -->8
