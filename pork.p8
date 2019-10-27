@@ -648,7 +648,7 @@ function show_inv()
 	_upd=update_inv
 	
 	
-	for i 1,2 do 
+	for i=1,2 do 
 		local itm,eqt=eqp[i]
 		if itm then
 			--add item to inventory
@@ -668,7 +668,7 @@ function show_inv()
 	add(txt,"--------------")
 	add(col, 6)
 	
-	for i 1,6 do 
+	for i=1,6 do 
 		local itm=inv[i]
 		if itm then
 			--add item to inventory
