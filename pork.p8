@@ -570,7 +570,7 @@ function draw_wind()
 			
 			print(txt,wx,wy,c)
 			if i==w.cur then 
-				spr(255, wx-5, wy)
+				spr(255, wx-5+sin(time()), wy)
 			end
 			wy+=6
 		end
