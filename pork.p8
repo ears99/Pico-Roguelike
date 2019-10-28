@@ -19,12 +19,11 @@ function _init()
 	
 	
 	--item attributes
-	itm_name={"broad sword","leather armor","red potion","iron spear","rusty sword"}
-	--item types: weapons, armor, comsumables, throwable
-	itm_type={"wep","arm","com","thr", "wep"}
-	
-	_upd=update_game
-	_drw=draw_game
+	itm_name={"broad sword","leather armor","red potion","iron spear", "battle ax"}
+	--types of items: weapons, armors, consumables, throwable
+	itm_type={"wep","arm", "con","thr", "wep"}
+	itm_stat1={2,0,0,0,4} --for armor, first stat is minimum defense, second stat is max defense
+	itm_stat2={0,2,0,0,0} 
 
 	--debugging system
 	debug={}
@@ -195,31 +194,32 @@ function update_inv()
 	--inventory
 	move_mnu(curwind)
 	if btnp(4) then
-		if curwind==inv_wind then
+		if curwind==inv_wind then 
 			_upd=update_game 
 			inv_wind.dur=0
 			stat_wind.dur=0
 		elseif curwind==use_wind then 
+			--canceling the use menu
 			use_wind.dur=0
 			curwind=inv_wind
 		end
-		elseif btnp(5) then 
+		elseif btnp(5) then
 			if curwind==inv_wind and inv_wind.cur!=3 then
 				show_use()
-			elseif curwind==use_wind then 
-				--use window confirm
-				trig_use()
-				
-			end
-		end
-	end 
+		elseif curwind==use_wind then
+			--use window confirm
+			trig_use()
+		end 
+	end
+end
 
 function move_mnu(wnd)
 	if btnp(2) then
-		wnd.cur -=1 
+		wnd.cur -=1
 	elseif btnp(3) then
-		wnd.cur +=1 	
+		wnd.cur +=1	
 	end
+	--cursor wrapping
 	wnd.cur=(wnd.cur-1)%#wnd.txt+1
 end
 
@@ -473,6 +473,9 @@ end
 
 function hit_mob(atkm,defm)
 	local dmg=atkm.atk
+	--calcuate damage absorbed by armor 
+	dmg-=max(dmg,defm.defmin+flr(rnd(defm.defmax-defm.defmin+1)))
+	
 	defm.hp-=dmg
 	defm.flash=10
 	add_float("-"..dmg,defm.x*8,defm.y*8,9)
@@ -560,6 +563,23 @@ function calc_dist(tx,ty)
 	until #cand==0
 end
 
+	function update_stats()
+		local atk, dmin, dmax=1,0,0
+		
+		if eqp[1] then 
+			atk+=itm_stat1[eqp[1]]
+		end
+		
+		if eqp[2] then 
+			dmin+=itm_stat1[eqp[2]]
+			dmax+=itm_stat2[eqp[2]]
+		end
+		p_mob.atk=atk
+		p_mob.defmin=dmin
+		p_mob.defmax=dmax
+	end
+
+
 -->8
 --ui
 
@@ -581,6 +601,7 @@ function draw_wind()
 			wx+=6
 		end
 		for i=1,#w.txt do
+		--local c error?
 			local txt,c=w.txt[i],6
 			if w.col and w.col[i] then
 				c=w.col[i]
@@ -660,29 +681,27 @@ end
 --inventory
 -----------
 function show_inv()
-	local txt,col={},{}
+	local txt,col,itm,eqt={},{}
 	_upd=update_inv
 	
-	
 	for i=1,2 do 
-		local itm,eqt=eqp[i]
+		itm=eqp[i]
 		if itm then
 			--add item to inventory
-			eqt=add(txt,itm_name[itm])
+			eqt=itm_name[itm]
 			add(col, 6)
 		else
-			--ternerary operator in Lua...kind of 
-			eqt= i==1 and "[weapon]" or "[armor]"
+			eqt=i==1 and "[weapon]" or "[armor]"
 			add(col,5)
 		end
 		add(txt, eqt)
 	end
 	
-	add(txt,"--------------")
+	add(txt,"……………")
 	add(col, 6)
 	
 	for i=1,6 do 
-		local itm=inv[i]
+		itm=inv[i]
 		if itm then
 			--add item to inventory
 			add(txt, itm_name[itm])
@@ -694,68 +713,75 @@ function show_inv()
 	end
 	
 	inv_wind=addwind(5,17,84,62, txt)
-	inv_wind.curmode=true 
 	inv_wind.cur=3 --cursor position
 	inv_wind.col=col
 	
 	--player stat screen 
-	stat_wind=addwind(5,5,84,13, {"atk: 1 	def: 1"})
-	
+	stat_wind=addwind(5,5,84,13, {"atk: "..p_mob.atk.." def: "..p_mob.defmin.."-"..p_mob.defmax})
+	--current window variable
 	curwind=inv_wind
 end
 
 function show_use()
-	local itm=inv_wind.cur < 3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
+	local itm=inv_wind.cur<3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
 	if itm==nil then return end
 	local typ,txt=itm_type[itm],{}
 	
-	if typ=="wep" or typ=="arm" then 
+	if typ=="wep" or typ=="arm" and inv_wind.cur >3 then 
 		add(txt, "equip")
-	end
-	if typ=="com" then
+	end 
+	if typ=="con" then 
 		add(txt, "use")
-	end
-	if typ=="thr" or typ=="com" then
+	end 
+	if typ=="con" or typ=="thr" then
 		add(txt, "throw")
 	end
-	add(txt, "trash")
+		add(txt, "trash")
 	
-	use_wind=addwind(84,inv_wind.cur*6+11,36,7+#txt*6, txt)
+	
+	use_wind=addwind(84,inv_wind.cur*6+11,36,7+#txt*6,txt)
 	use_wind.cur=1
 	curwind=use_wind
 end
 
---options in the use menu
 function trig_use()
-	local verb,i=use_wind.txt[use_wind.cur],inv_wind.cur
-	local itm=i < 3 and eqp[i] or inv[i-3]
+	local verb,i,after=use_wind.txt[use_wind.cur],inv_wind.cur,"back"
+	local itm=i<3 and eqp[i] or inv[i-3]
 	
 	if verb=="trash" then
+		--destroy the item 
 		if i < 3 then
 			eqp[i]=nil
-		else
+		else 
 			inv[i-3]=nil
-		end
-		
-	elseif verb=="equip" then
+		end 
+	
+	elseif verb=="equip" then 
 		local slot=2
-		--get the type of the item
-		if itm_type[itm]=="wep" then
+		if itm_type[itm]=="wep" then 
 			slot=1
 		end
 		inv[i-3]=eqp[slot]
 		eqp[slot]=itm
-		
 	elseif verb=="use" then
-		
+	
 	elseif verb=="throw" then
-		
+	
 	end
 	
-	use_wind.dur=0
-	inv_wind.dur=0
-	stat_wind.dur=0
-	_upd=update_game
+	update_stats()
+	if after=="back" then 
+		 use_wind.dur=0
+		 del(wind,inv_wind)
+		 del(wind,stat_wind)
+		 show_inv()
+		 inv_wind.cur=i
+	elseif after=="game" then
+		 use_wind.dur=0
+		 inv_wind.dur=0
+		 stat_wind.dur=0
+		_upd=update_game
+	end
 end
 
 -->8
@@ -773,6 +799,8 @@ function add_mob(typ,mx,my)
 		hp=mob_hp[typ],
 		hp_max=mob_hp[typ],
 		atk=mob_atk[typ],
+		defmin=0,
+		defmax=0,
 		los=mob_los[typ],
 		task=ai_wait
 	}
@@ -923,21 +951,19 @@ end
 ---------
 function take_item(itm)
 	local i = check_inv()
-	if i==0 then 
-		return false
-	end
+	if i == 0 then return false end
 	inv[i]=itm
 	return true
 end
 
 --checks for a free spot in the inventory
 function check_inv()
-	for i=1,6 do 
+	for i=1,6 do
 		if not inv[i] then
-		return i
+			return i
 		end
 	end
-	return 0
+	return 0 --returns 0 if no slot is free
 end
 
 __gfx__
