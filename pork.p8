@@ -1092,21 +1092,29 @@ end
 -----------
 function gen_rooms()
 	--fail max,room max
-	local fmax, rmax=5,9 
-		
+	local fmax, rmax=5,5 
+	local mw,mh=6,6
 		repeat
 			local r = rnd_room(5,5)
 		 if place_room(r) then 
 		 	rmax-=1
-		 else 
+		 else
 		 	fmax-=1
+		 	
+		 	if r.w>r.h then 
+		 		mw=max(mw-1,3)
+		 	else
+		 		mh=max(mh-1,3)
+		 	end
 		 end
+		 
 		until fmax<=0 or rmax<=0 
 end
 
 function rnd_room(max_w,max_h)
 	--clamp max size
 	local _w=3+flr(rnd(max_w-2))
+	mh=max(35/_w,3)
 	local _h=3+flr(rnd(max_h-2))
 	return {
 		x=0,
