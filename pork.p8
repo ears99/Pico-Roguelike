@@ -455,8 +455,6 @@ function moveplayer(dx,dy)
 						trig_bump(tle, destx,desty)
 					else
 						skip_ai=true
-						mset(destx,desty,2)
-						maze_worm()
 					end 
 			end
 	end
@@ -1101,7 +1099,7 @@ end
 -----------
 function gen_rooms()
 	--fail max, room max
-	local fmax, rmax=5,5 
+	local fmax, rmax=5,4
 	--max width, max height
 	local mw,mh=6,6 
 		repeat
@@ -1188,18 +1186,49 @@ function get_sig(x,y)
 end
 
 function maze_worm()
-	for x=0,15 do
-		for y=0,15 do
-			if not is_walkable(x,y) then 
-				if can_carve(x,y)  then 
-						mset(x,y,3)
-					else 
-						mset(x,y,1)
-				end
-			end 
-		end 
-	end
+	repeat
+		local cand={}
+			for _x=0,15 do
+				for _y=0,15 do
+					if not is_walkable(_x,_y) and get_sig(_x,_y)==255 then 
+						add(cand,{x=_x,y=_y})
+					end
+				end 
+			end
+			if #cand>0 then
+				local c = get_rnd(cand)
+				dig(c.x,c.y)
+			end
+	until #cand<=1
 end
+
+
+function dig(x,y)
+--direction
+	local d,step=1+flr(rnd(4)),0  
+	repeat
+		mset(x,y,2)
+		if not can_carve(x+dirx[d],y+diry[d]) or (rnd() < 0.5 and step%2==0) then
+			step=0
+			local cand={}
+			for i=1,4 do
+				if can_carve(x+dirx[i],y+diry[i]) then
+				 add(cand,i)
+				end
+			end
+					if #cand==0 then 
+						d=8
+					else
+						d=get_rnd(cand)
+					end
+			end
+			x+=dirx[d]
+			y+=diry[d]
+			step+=1
+	until d==8
+	
+end
+
 
 function bcomp(sig,match,mask)
 	local mask=mask and mask or 0
@@ -1208,7 +1237,7 @@ end
 
 function can_carve(x,y)
 	local sig=get_sig(x,y)
-	if in_bounds(x,y) then
+	if in_bounds(x,y) and not is_walkable(x,y) then
 		for i=1,#crv_sig do
 				if	bcomp(sig,crv_sig[i],crv_msk[i]) then 
 					return true
