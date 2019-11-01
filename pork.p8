@@ -72,21 +72,18 @@ function startgame()
 	p_mob = add_mob(1,1,1)
 	p_t=0
 
- -------------
-	--inventory--
-	-------------
 	inv,eqp={},{}
 	--eqp[1] - weapon
 	--eqp[2] - armor
 	--inv[1-6] - inventory
 
---window/ui
+	--window/ui
 	wind={}
 	float={}
 	talkwind=nil
 
 	--fog of war
-	--fill the map with fog: 1(default)
+	--fill the map with fog: 1
 	--show the entire map: 0
 	fog=blank_map(0)
 
@@ -272,13 +269,13 @@ function draw_game()
 		end
 	end
 
-	for x=0,15 do
-		for y=0,15 do
-			if flags[x][y]!=0 then
-				pset(x*8+3,y*8+5,flags[x][y])
-			end
-		end
-	end
+--	for x=0,15 do
+--		for y=0,15 do
+--			if flags[x][y]!=0 then
+--				pset(x*8+3,y*8+5,flags[x][y])
+--			end
+--		end
+--	end
 
 	for f in all(float) do
 		oprint8(f.txt,f.x,f.y,f.c,0)
@@ -1035,6 +1032,7 @@ function gen_map()
 	place_flags()
 	carvedoors()
 	carvescuts()
+	fillends()
 end
 
 -----------
@@ -1151,11 +1149,11 @@ function dig(x,y)
 	local d,step=1+flr(rnd(4)),0
 	repeat
 		mset(x,y,2)
-		if not can_carve(x+dirx[d],y+diry[d]) or (rnd() < 0.5 and step%2==0) then
+		if not can_carve(x+dirx[d],y+diry[d],false) or (rnd() < 0.5 and step%2==0) then
 			step=0
 			local cand={}
 			for i=1,4 do
-				if can_carve(x+dirx[i],y+diry[i]) then
+				if can_carve(x+dirx[i],y+diry[i],false) then
 				 add(cand,i)
 				end
 			end
@@ -1178,11 +1176,11 @@ function bcomp(sig,match,mask)
 	return bor(sig,mask)==bor(match,mask)
 end
 
-function can_carve(x,y)
+function can_carve(x,y,walk)
 	local sig=get_sig(x,y)
-	if in_bounds(x,y) and not is_walkable(x,y) then
+	if in_bounds(x,y) and is_walkable(x,y)==walk then
 		for i=1,#crv_sig do
-				if	bcomp(sig,crv_sig[i],crv_msk[i]) then
+				if bcomp(sig,crv_sig[i],crv_msk[i]) then
 					return true
 				end
 			end
@@ -1209,14 +1207,15 @@ end
 
 function grow_flag(_x,_y,flg)
 	local cand,cand_new={{x=_x,y=_y}}
+	flags[_x][_y]=flg
 	repeat
 		cand_new={}
 		for c in all(cand) do
-			flags[c.x][c.y]=flg
 			for d=1,4 do
 				local dx,dy=c.x+dirx[d],c.y+diry[d]
 				if is_walkable(dx,dy) and flags[dx][dy]!=flg then
 					add(cand_new,{x=dx,y=dy})
+					flags[dx][dy]=flg
 				end
 			end
 		end
@@ -1253,40 +1252,56 @@ repeat
 		end
 until #drs==0
 end
-
+ 
 function carvescuts()
-	--repeat
-			local x1,y1,x2,y2,found=1,1,1,1
-			local drs={}
-			for _x=0,15 do
-				for _y=0,15 do
-					if not is_walkable(_x,_y) then
+	repeat
+		local x1,y1,x2,y2,cut,found=1,1,1,1,0
+		local drs={}
+		for _x=0,15 do
+			for _y=0,15 do
+				if not is_walkable(_x,_y) then
 					local sig=get_sig(_x,_y)
-					found=false
-				if bcomp(sig,0b11000000,0b00001111) then
-					x1,y1,x2,y2,found=_x,_y-1,_x,_y+1,true
-				elseif bcomp(sig,0b00110000,0b00001111) then
-					x1,y1,x2,y2=_x+1,_y,_x-1,_y,true
-			end
+		 			found=false
+					if bcomp(sig,0b11000000,0b00001111) then
+						x1,y1,x2,y2,found=_x,_y-1,_x,_y+1,true
+					elseif bcomp(sig,0b00110000,0b00001111) then
+						x1,y1,x2,y2=_x+1,_y,_x-1,_y,true
+					end
 
-			if found then
-				calc_dist(x1,y1)
+				if found then
+					calc_dist(x1,y1)
 						if dist_map[x2][y2]>20 then
 								add(drs,{x=_x,y=_y})
-								mset(_x,_y,3)
 							end
 						end
 					end
 				end
 			end
-			--if #drs>0 then
-				--local d=get_rnd(drs)
-				--mset(d.x,d.y,2)
-					--grow_flag(d.x,d.y,d.f1)
-			--end
-	--until #drs==0
+			if #drs>0 then
+				local d=get_rnd(drs)
+				mset(d.x,d.y,2)
+				cut+=1
+			end
+	until #drs==0 or cut>=3
 end
 
+function fillends()
+	local cand
+	repeat
+		cand={}
+		for _x=0,15 do
+			for _y=0,15 do
+				if can_carve(_x,_y,true) then
+					add(cand,{x=_x,y=_y})
+				end 
+			end 
+		end
+		
+	for c in all(cand) do
+		mset(c.x,c.y,1)
+	end	
+	until #cand==0
+end
 
 
 __gfx__
@@ -1303,7 +1318,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
