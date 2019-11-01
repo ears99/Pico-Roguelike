@@ -17,14 +17,14 @@ function _init()
 	mob_atk={1,1} --attack power
 	mob_hp={5,1} --hit points
 	mob_los={4,4} --perception
-	
-	
+
+
 	--item attributes
 	itm_name={"broad sword","leather armor","red potion","iron spear", "rusty sword"}
 	--types of items: weapons, armors, consumables, throwable
 	itm_type={"wep","arm", "con","thr", "wep"}
 	itm_stat1={2,0,1,1,1} --for armor, first stat is minimum defense, second stat is max defense
-	itm_stat2={0,2,0,0,0} 
+	itm_stat2={0,2,0,0,0}
 	--effects: 1=healing
 
 	--debugging system
@@ -71,15 +71,15 @@ function startgame()
 	--player
 	p_mob = add_mob(1,1,1)
 	p_t=0
-	
- -------------	
+
+ -------------
 	--inventory--
 	-------------
 	inv,eqp={},{}
 	--eqp[1] - weapon
 	--eqp[2] - armor
 	--inv[1-6] - inventory
-	
+
 --window/ui
 	wind={}
 	float={}
@@ -88,10 +88,10 @@ function startgame()
 	--fog of war
 	--fill the map with fog: 1(default)
 	--show the entire map: 0
-	fog=blank_map(0) 
-	
-	
-	
+	fog=blank_map(0)
+
+
+
 	hp_wind=addwind(5,5,28,13, {})
 
 		--throw directions
@@ -101,16 +101,13 @@ function startgame()
 	_drw=draw_game
 	unfog()
 	gen_map()
-	
+
 	calc_dist(p_mob.x, p_mob.y)
 end
 -->8
 --updates
 function update_game()
---if talkwind exists
 	if talkwind then
---if X is pressed,
---close the window
 		if getbutt()==5 then
 			talkwind.dur = 0
 			talkwind=nil
@@ -122,18 +119,17 @@ function update_game()
 	end
 end
 
---update player turn
 function update_pturn()
 	dobuttbuff()
 	p_t=min(p_t+0.125,1)
-	
-	if p_mob.mov then 
+
+	if p_mob.mov then
 		p_mob.mov(p_mob)
-	
+
 	if p_t==1 then
 		_upd=update_game
 		if check_end() then
-				if skip_ai then 
+				if skip_ai then
 					skip_ai=false
 				else
 					do_ai()
@@ -144,7 +140,6 @@ function update_pturn()
 	end
 end
 
---update AI turn
 function update_ai_turn()
 	dobuttbuff()
 	p_t=min(p_t+0.125,1)
@@ -166,7 +161,6 @@ function update_gameover()
 	end
 end
 
---buttons
 function dobuttbuff()
 	if buttbuff==-1 then
 		buttbuff=getbutt()
@@ -186,26 +180,21 @@ function dobutt(butt)
 	if butt<0 then return end
 	if butt<4 then
 		moveplayer(dirx[butt+1],diry[butt+1])
-	elseif butt==5 then --x  
+	elseif butt==5 then --x
 		show_inv()
 		elseif butt==4 then --z
 			gen_map()
 	end
 end
 
-------------
---inventory
-------------
 function update_inv()
-	--inventory
 	move_mnu(curwind)
 	if btnp(4) then
-		if curwind==inv_wind then 
-			_upd=update_game 
+		if curwind==inv_wind then
+			_upd=update_game
 			inv_wind.dur=0
 			stat_wind.dur=0
-		elseif curwind==use_wind then 
-			--canceling the use menu
+		elseif curwind==use_wind then
 			use_wind.dur=0
 			curwind=inv_wind
 		end
@@ -213,9 +202,8 @@ function update_inv()
 			if curwind==inv_wind and inv_wind.cur!=3 then
 				show_use()
 		elseif curwind==use_wind then
-			--use window confirm
 			trig_use()
-		end 
+		end
 	end
 end
 
@@ -223,24 +211,22 @@ function move_mnu(wnd)
 	if btnp(2) then
 		wnd.cur -=1
 	elseif btnp(3) then
-		wnd.cur +=1	
+		wnd.cur +=1
 	end
-	--cursor wrapping in menus
 	wnd.cur=(wnd.cur-1)%#wnd.txt+1
 end
 
 function update_throw()
 	local b=getbutt()
-	if b >= 0 and b <=3 then 
+	if b >= 0 and b <=3 then
 		thr_dir=b
-	end 
+	end
 	thrdx,thrdy=dirx[thr_dir+1],diry[thr_dir+1]
-	if b == 4 then 
-	--cancel the throw
-	_upd=update_game	
-	elseif b == 5 then 
+	if b == 4 then
+	_upd=update_game
+	elseif b == 5 then
 		throw()
-	end  
+	end
 end
 -->8
 --draws
@@ -248,9 +234,7 @@ function draw_game()
 	cls(0)
 	map()
 
-	--dead mobs
 	for m in all(dmob) do
-		--make mobs flash on death
 		if sin(time()*8) > 0 then
 		draw_mob(m)
 		m.dur -= 1
@@ -260,29 +244,26 @@ function draw_game()
 		end
 	end
 
-	--reguar mobs
 	for i=#mob,1,-1 do
 		draw_mob(mob[i])
 	end
-	
-	--throw ui 
+
 	if _upd==update_throw then
 		local tx,ty=throw_tile()
 		local lx1,ly1,lx2,ly2=p_mob.x*8+3+thrdx*4,p_mob.y*8+3+thrdy*4, tx*8+thrdx*16+3, ty*8+thrdy*16+3
-	
+
 		line(lx1+thrdy,ly1+thrdx,lx2+thrdy,ly2+thrdx,0)
 		line(lx1-thrdy,ly1-thrdx,lx2-thrdy,ly2-thrdx,0)
-		if flr(t/7)%2==0 then 		
+		if flr(t/7)%2==0 then
 				fillp(0b0101101001011010)
-			else 
+			else
 				fillp(0b1010010110100101)
-			end			
+			end
 		line(lx1,ly1,lx2,ly2,7)
 		oprint8("+",lx2-1,ly2-2,7,0)
 	end
 	fillp()
-	
-	--draw fog
+
 	for x=0,15 do
 		for y=0,15 do
 			if fog[x][y]==1 then
@@ -290,8 +271,7 @@ function draw_game()
 			end
 		end
 	end
-	
-	--draw flags
+
 	for x=0,15 do
 		for y=0,15 do
 			if flags[x][y]!=0 then
@@ -337,7 +317,6 @@ function drawrect(_x,_y,_w,_h,_c)
 	rectfill(_x,_y,_x+max(_w-1,0),_y+max(_h-1,0),_c)
 end
 
---print text with an outline
 function oprint8(_t,_x,_y,_c,_c2)
 	for i=1,8 do
 		print(_t, _x+dirx[i],_y+diry[i],_c2)
@@ -345,8 +324,7 @@ function oprint8(_t,_x,_y,_c,_c2)
 	print(_t,_x,_y,_c)
 end
 
---calculates the distance between two points
---using the pythagorean theorem
+
 function dist(fx,fy,tx,ty)
 	local dx,dy=fx-tx,fy-ty
 	return sqrt(dx*dx+dy*dy)
@@ -364,7 +342,7 @@ function do_fade()
 	end
 end
 
---check if the screen is faded to any percent
+
 function check_fade()
 	if fadeperc>0 then
 		fadeperc=max(fadeperc-0.04, 0)
@@ -389,10 +367,7 @@ function fade_out(spd, _wait)
 	until fadeperc==1
 	wait(_wait)
 end
-----------------
--- fog of war --
-----------------
---yellow bit flag sets a tile to blocking line of sight
+
 function blank_map(_dflt)
 	local ret={}
 	if(_dflt==nil) _dflt=0
@@ -428,8 +403,6 @@ function unfog_tile(x,y)
 	end
 end
 
---get a random number from an array, 
---from 1 to the size of the array
 function get_rnd(arr)
 	return arr[1+flr(rnd(#arr))]
 end
@@ -437,7 +410,6 @@ end
 
 -->8
 --gameplay
-
 function moveplayer(dx,dy)
 	local destx=p_mob.x+dx
 	local desty=p_mob.y+dy
@@ -464,7 +436,7 @@ function moveplayer(dx,dy)
 						trig_bump(tle, destx,desty)
 					else
 						skip_ai=true
-					end 
+					end
 			end
 	end
 	unfog()
@@ -475,13 +447,13 @@ function trig_bump(tle,destx,desty)
 		--vase
 		sfx(59)
 		mset(destx,desty,2)
-		
-		if rnd(4)<1 then 
+
+		if rnd(4)<1 then
 			local itm=flr(rnd(#itm_name))+1
 			take_item(itm)
-			show_msg(itm_name[itm],60)	
+			show_msg(itm_name[itm],60)
 		end
-		
+
 	elseif tle==10 or tle==12 then
 		--chest
 		sfx(61)
@@ -489,7 +461,7 @@ function trig_bump(tle,destx,desty)
 		local itm=flr(rnd(#itm_name))+1
 		take_item(itm)
 		show_msg(itm_name[itm],60)
-		
+
 	elseif tle==13 then
 		--door
 		sfx(62)
@@ -511,7 +483,6 @@ end
 
 function is_walkable(x,y,mode)
 	if mode==nil then mode="" end
-	--sight is also a mode
 	if in_bounds(x,y) then
 		local tle=mget(x,y)
 	if mode=="sight" then
@@ -534,19 +505,16 @@ end
 
 function hit_mob(atkm,defm,rawdmg)
 	local dmg=atkm and atkm.atk or rawdmg
-	--calcuate damage absorbed by armor 
 	local def=defm.defmin+flr(rnd(defm.defmax-defm.defmin+1))
 	dmg-=min(def,dmg)
-	
+
 	defm.hp-=dmg
 	defm.flash=10
-	
+
 	add_float("-"..dmg,defm.x*8,defm.y*8,9)
 	if defm.hp<=0 then
-		--add the mob to the dead mob array and remove it from the mob array
 		add(dmob,defm)
 		del(mob,defm)
-		--keep the mob around for the duration
 		defm.dur=15
 	end
 end
@@ -558,7 +526,7 @@ function check_end()
 		_drw=draw_gameover
 		fade_out(0.02)
 		--reload the map on death
-		reload(0x2000,0x2000,0x1000)
+		--reload(0x2000,0x2000,0x1000)
 		return false
 	end
 	return true
@@ -596,11 +564,6 @@ function los(x1,y1,x2,y2)
 	return true
 end
 
-
----------------
---pathfinding--
----------------
---calculate distance to target
 function calc_dist(tx,ty)
 	local cand,step={},0
 	dist_map=blank_map(-1)
@@ -609,7 +572,7 @@ function calc_dist(tx,ty)
 	repeat
 		step+=1
 		cand_new={}
-		for c in all(cand) do 
+		for c in all(cand) do
 				--loop through neighboring tiles
 			for d=1,4 do
 				local dx=c.x+dirx[d]
@@ -628,12 +591,12 @@ end
 
 	function update_stats()
 		local atk, dmin, dmax=1,0,0
-		
-		if eqp[1] then 
+
+		if eqp[1] then
 			atk+=itm_stat1[eqp[1]]
 		end
-		
-		if eqp[2] then 
+
+		if eqp[2] then
 			dmin+=itm_stat1[eqp[2]]
 			dmax+=itm_stat2[eqp[2]]
 		end
@@ -645,9 +608,8 @@ end
 
 	function eat(itm, mb)
 		local effect=itm_stat1[itm]
-		if effect==1 then 
-		--heal
-		heal_mob(mb,1)
+		if effect==1 then
+			heal_mob(mb,1)
 		end
 	end
 
@@ -661,14 +623,14 @@ end
 
 function throw()
 	local itm,tx,ty=inv[thrslt],throw_tile()
-	if in_bounds(tx,ty) then 
+	if in_bounds(tx,ty) then
 		local mb=get_mob(tx,ty)
 		if mb then
-			if itm_type[itm]=="con" then 
+			if itm_type[itm]=="con" then
 				eat(itm,mb)
-			else 
+			else
 				hit_mob(nil, mb, itm_stat1[itm])
-			end 
+			end
 		end
 	end
 	mob_bump(p_mob, thrdx, thrdy)
@@ -678,11 +640,11 @@ function throw()
 end
 
 function throw_tile()
-	local tx,ty=p_mob.x, p_mob.y --starting position for throw 
+	local tx,ty=p_mob.x, p_mob.y
 	repeat
-		tx+=thrdx --keep moving the line in the direction of the throw 
+		tx+=thrdx
 		ty+=thrdy
-	until not is_walkable(tx,ty,"checkmobs") --until is_walkable returns false 
+	until not is_walkable(tx,ty,"checkmobs")
 	return tx,ty
 end
 -->8
@@ -702,24 +664,23 @@ function draw_wind()
 		wx+=4
 		wy+=4
 		clip(wx,wy,ww-8,wh-8)
-		if w.cur then 
+		if w.cur then
 			wx+=6
 		end
 		for i=1,#w.txt do
-		--local c error?
 			local txt,c=w.txt[i],6
 			if w.col and w.col[i] then
 				c=w.col[i]
-			end 
-			
+			end
+
 			print(txt,wx,wy,c)
-			if i==w.cur then 
+			if i==w.cur then
 				spr(255, wx-5+sin(time()), wy)
 			end
 			wy+=6
 		end
 		clip()
-		--window with a duration
+
 		if w.dur then
 			w.dur -= 1
 		if w.dur <= 0 then
@@ -731,7 +692,7 @@ function draw_wind()
 		end
 	end
 	else
-	--if the window has a button
+
 	if w.butt then
 		oprint8("❎",wx+ww-15,wy-1+sin(time()),6,0)
 		end
@@ -739,22 +700,16 @@ function draw_wind()
 	end
 end
 
---text with duration in frames
 function show_msg(txt,dur)
 	local width=(#txt+2)*4+7
 	local w=addwind(63-width/2,50,width,13,{" "..txt})
 	w.dur=dur
 end
 
---text with button
 function show_t_msg(txt)
 	talkwind=addwind(16,50,94,#txt*6+7,txt)
 	talkwind.butt=true
 end
-
---------------
--- floaters --
---------------
 
 function add_float(_txt,_x,_y,_c)
 	add(float, {txt=_txt,x=_x,y=_y,c=_c,ty=_y-10,t=0})
@@ -770,9 +725,6 @@ function do_float()
 	end
 end
 
-----------------
--- HP display --
-----------------
 function update_hp_wind()
 	hp_wind.txt[1]="♥"..p_mob.hp.."/"..p_mob.hp_max
 	local hpy=5
@@ -782,17 +734,14 @@ function update_hp_wind()
 	hp_wind.y+=(hpy-hp_wind.y)/5
 end
 
------------
---inventory
------------
 function show_inv()
 	local txt,col,itm,eqt={},{}
 	_upd=update_inv
-	
-	for i=1,2 do 
+
+	for i=1,2 do
 		itm=eqp[i]
 		if itm then
-			--add item to inventory
+			--add item to item slot
 			eqt=itm_name[itm]
 			add(col, 6)
 		else
@@ -801,11 +750,11 @@ function show_inv()
 		end
 		add(txt, eqt)
 	end
-	
+
 	add(txt,"……………")
 	add(col, 6)
-	
-	for i=1,6 do 
+
+	for i=1,6 do
 		itm=inv[i]
 		if itm then
 			--add item to inventory
@@ -816,14 +765,13 @@ function show_inv()
 			add(col,5)
 		end
 	end
-	
+
 	inv_wind=addwind(5,17,84,62, txt)
 	inv_wind.cur=3 --cursor position
 	inv_wind.col=col
-	
-	--player stat screen 
+
+	--player stat screen
 	stat_wind=addwind(5,5,84,13, {"atk: "..p_mob.atk.." def: "..p_mob.defmin.."-"..p_mob.defmax})
-	--current window variable
 	curwind=inv_wind
 end
 
@@ -831,19 +779,19 @@ function show_use()
 	local itm=inv_wind.cur<3 and eqp[inv_wind.cur] or inv[inv_wind.cur-3]
 	if itm==nil then return end
 	local typ,txt=itm_type[itm],{}
-	
-	if typ=="wep" or typ=="arm" and inv_wind.cur >3 then 
+
+	if typ=="wep" or typ=="arm" and inv_wind.cur >3 then
 		add(txt, "equip")
-	end 
-	if typ=="con" then 
+	end
+	if typ=="con" then
 		add(txt, "use")
-	end 
+	end
 	if typ=="con" or typ=="thr" then
 		add(txt, "throw")
 	end
 		add(txt, "trash")
-	
-	
+
+
 	use_wind=addwind(84,inv_wind.cur*6+11,36,7+#txt*6,txt)
 	use_wind.cur=1
 	curwind=use_wind
@@ -852,18 +800,17 @@ end
 function trig_use()
 	local verb,i,after=use_wind.txt[use_wind.cur],inv_wind.cur,"back"
 	local itm=i<3 and eqp[i] or inv[i-3]
-	
+
 	if verb=="trash" then
-		--destroy the item 
 		if i < 3 then
 			eqp[i]=nil
-		else 
+		else
 			inv[i-3]=nil
-		end 
-	
-	elseif verb=="equip" then 
+		end
+
+	elseif verb=="equip" then
 		local slot=2
-		if itm_type[itm]=="wep" then 
+		if itm_type[itm]=="wep" then
 			slot=1
 		end
 		inv[i-3]=eqp[slot]
@@ -873,19 +820,19 @@ function trig_use()
 		inv[i-3]=nil
 		after="turn"
 	elseif verb=="throw" then
-		after="throw" 
+		after="throw"
 		thrslt=i-3
 		_upd=update_throw
 	end
-	
+
 	update_stats()
-	if after=="back" then 
+	if after=="back" then
 			use_wind.dur=0
 			del(wind,inv_wind)
 			del(wind,stat_wind)
 			show_inv()
 			inv_wind.cur=i
-	elseif after=="turn" then 
+	elseif after=="turn" then
 			use_wind.dur=0
 			inv_wind.dur=0
 			stat_wind.dur=0
@@ -897,7 +844,7 @@ function trig_use()
 			inv_wind.dur=0
 			stat_wind.dur=0
 			_upd=update_game
-	elseif after=="throw" then 
+	elseif after=="throw" then
 			use_wind.dur=0
 			inv_wind.dur=0
 			stat_wind.dur=0
@@ -908,12 +855,11 @@ end
 -->8
 --mobs and items
 function add_mob(typ,mx,my)
-	--mob object
 	local m={
 		x=mx,
 		y=my,
 		ox=0,
-		oy=0,		
+		oy=0,
 		flp=false,
 		ani={},
 		flash=0,
@@ -929,7 +875,6 @@ function add_mob(typ,mx,my)
 	for i = 0,3 do
 		add(m.ani, mob_ani[typ]+i)
 	end
-	--add mob to the mob array
 	add(mob,m)
 	return m
 end
@@ -964,9 +909,6 @@ function mob_flip(mb,dx)
 	end
 end
 
-------------------
---mob animations--
-------------------
 function ani_walk(mb)
 	local tme=1-p_t
 	mb.ox=mb.sox*tme
@@ -981,11 +923,6 @@ function ani_bump(mb)
 	mb.ox=mb.sox*tme
 	mb.oy=mb.soy*tme
 end
-
-
-------
---AI--
-------
 
 function do_ai()
 	local moving=false
@@ -1023,7 +960,6 @@ function ai_attack(m)
 		return true
 	else
 		--move towards player
-		--best distance, bestx and besty
 		if can_see(m,p_mob) then
 			m.tx,m.ty=p_mob.x,p_mob.y
 		end
@@ -1033,7 +969,7 @@ function ai_attack(m)
 			m.task=ai_wait
 			add_float("?", m.x*8+2,m.y*8, 10)
 		else
-			
+
 			local bdst,cand=999,{}
 			calc_dist(m.tx,m.ty)
 			--loop through neighboring squares
@@ -1051,13 +987,12 @@ function ai_attack(m)
 				end
 			end
 		end
-		
+
 		if #cand>0 then
 			local c=get_rnd(cand)
 			mob_walk(m,c.x,c.y)
 			return true
 		end
-	--todo: re-aquire target
 		end
 	end
 	return false
@@ -1067,10 +1002,6 @@ function can_see(m1,m2)
 	return dist(m1.x,m1.y,m2.x,m2.y) <= m1.los and los(m1.x,m1.y,m2.x,m2.y)
 end
 
----------
---items--
----------
---add an item to the inventory
 function take_item(itm)
 	local i = check_inv()
 	if i == 0 then return false end
@@ -1086,7 +1017,7 @@ function check_inv()
 		end
 	end
 	--returns 0 if no slot is free
-	return 0 
+	return 0
 end
 
 -->8
@@ -1096,7 +1027,7 @@ end
 function gen_map()
 		for x = 0,15 do
 			for y=0,15 do
-				mset(x,y,1)	
+				mset(x,y,1)
 		end
 	end
 	gen_rooms()
@@ -1112,22 +1043,22 @@ function gen_rooms()
 	--fail max, room max
 	local fmax, rmax=5,4
 	--max width, max height
-	local mw,mh=6,6 
+	local mw,mh=6,6
 		repeat
 			local r = rnd_room(5,5)
-		 if place_room(r) then 
+		 if place_room(r) then
 		 	rmax-=1
 		 else
 		 	fmax-=1
-		 	
-		 	if r.w>r.h then 
+
+		 	if r.w>r.h then
 		 		mw=max(mw-1,3)
 		 	else
 		 		mh=max(mh-1,3)
 		 	end
 		 end
-		 
-		until fmax<=0 or rmax<=0 
+
+		until fmax<=0 or rmax<=0
 end
 
 function rnd_room(max_w,max_h)
@@ -1144,34 +1075,34 @@ function rnd_room(max_w,max_h)
 end
 
 function place_room(r)
-	local cand={} --canidates for rooms
-	
+	local cand={}
+
 	for _x=0,16-r.w do
 		for _y=0,16-r.h do
-			if does_room_fit(r,_x,_y) then 
+			if does_room_fit(r,_x,_y) then
 				add(cand, {x=_x,y=_y})
 				end
-		end 
+		end
 	end
 	if #cand==0 then return false end
 	c=get_rnd(cand)
 	r.x,r.y=c.x,c.y
-	
+
 	for _x=0,r.w-1 do
 		for _y=0,r.h-1 do
 			 mset(_x+r.x,_y+r.y,2)
-			end 
+			end
 		end
 		return true
 end
 
-function does_room_fit(r,x,y) 
+function does_room_fit(r,x,y)
 	for _x=-1,r.w do
 		for _y=-1,r.h do
-			 if is_walkable(_x+x,_y+y) then 
+			 if is_walkable(_x+x,_y+y) then
 			 	return false
-			 end 
-			end 
+			 end
+			end
 		end
 	return true
 end
@@ -1186,12 +1117,12 @@ function get_sig(x,y)
 	--loop through neighboring tiles
 	for i=1,8 do
 		local dx,dy=x+dirx[i], y+diry[i]
-		if is_walkable(dx,dy) then 
-			digit=0				
+		if is_walkable(dx,dy) then
+			digit=0
 		else
-			digit=1 		
+			digit=1
 		end
-		sig=bor(sig,shl(digit,8-i)) 	
+		sig=bor(sig,shl(digit,8-i))
 	end
 	return sig
 end
@@ -1201,10 +1132,10 @@ function maze_worm()
 		local cand={}
 			for _x=0,15 do
 				for _y=0,15 do
-					if not is_walkable(_x,_y) and get_sig(_x,_y)==255 then 
+					if not is_walkable(_x,_y) and get_sig(_x,_y)==255 then
 						add(cand,{x=_x,y=_y})
 					end
-				end 
+				end
 			end
 			if #cand>0 then
 				local c = get_rnd(cand)
@@ -1216,7 +1147,7 @@ end
 
 function dig(x,y)
 --direction
-	local d,step=1+flr(rnd(4)),0  
+	local d,step=1+flr(rnd(4)),0
 	repeat
 		mset(x,y,2)
 		if not can_carve(x+dirx[d],y+diry[d]) or (rnd() < 0.5 and step%2==0) then
@@ -1227,7 +1158,7 @@ function dig(x,y)
 				 add(cand,i)
 				end
 			end
-					if #cand==0 then 
+					if #cand==0 then
 						d=8
 					else
 						d=get_rnd(cand)
@@ -1237,10 +1168,10 @@ function dig(x,y)
 			y+=diry[d]
 			step+=1
 	until d==8
-	
+
 end
 
-
+--binary comparison
 function bcomp(sig,match,mask)
 	local mask=mask and mask or 0
 	return bor(sig,mask)==bor(match,mask)
@@ -1250,9 +1181,9 @@ function can_carve(x,y)
 	local sig=get_sig(x,y)
 	if in_bounds(x,y) and not is_walkable(x,y) then
 		for i=1,#crv_sig do
-				if	bcomp(sig,crv_sig[i],crv_msk[i]) then 
+				if	bcomp(sig,crv_sig[i],crv_msk[i]) then
 					return true
-				end 
+				end
 			end
 		return false
 	end
@@ -1262,7 +1193,6 @@ end
 -----------
 -- doors --
 -----------
-
 function place_flags()
 	local curf=1
 	flags=blank_map(0)
@@ -1271,20 +1201,20 @@ function place_flags()
 			if is_walkable(_x,_y) and flags[_x][_y]==0 then
 				grow_flag(_x,_y,curf)
 				curf+=1
-			end 
+			end
 		end
 	end
 end
 
 function grow_flag(_x,_y,flg)
 	local cand,cand_new={{x=_x,y=_y}}
-	repeat 
+	repeat
 		cand_new={}
 		for c in all(cand) do
 			flags[c.x][c.y]=flg
 			for d=1,4 do
 				local dx,dy=c.x+dirx[d],c.y+diry[d]
-				if is_walkable(dx,dy) and flags[dx][dy]!=flg then 
+				if is_walkable(dx,dy) and flags[dx][dy]!=flg then
 					add(cand_new,{x=dx,y=dy})
 				end
 			end
@@ -1299,11 +1229,11 @@ repeat
 		local drs={}
 		for _x=0,15 do
 			for _y=0,15 do
-				if not is_walkable(_x,_y) then 
+				if not is_walkable(_x,_y) then
 				local sig=get_sig(_x,_y)
 				found=false
 			if bcomp(sig,0b11000000,0b00001111) then
-				x1,y1,x2,y2,found=_x,_y-1,_x,_y+1,true			
+				x1,y1,x2,y2,found=_x,_y-1,_x,_y+1,true
 			elseif bcomp(sig,0b00110000,0b00001111) then
 				x1,y1,x2,y2=_x+1,_y,_x-1,_y,true
 		end
@@ -1315,14 +1245,16 @@ repeat
 				end
 			end
 		end
-		if #drs>0 then 
+		if #drs>0 then
 			local d=get_rnd(drs)
 			mset(d.x,d.y,2)
 				grow_flag(d.x,d.y,d.f1)
 		end
-	
-until #drs==0	 
+until #drs==0
 end
+
+
+
 __gfx__
 000000006660666000000000ddd0ddd0fff0fff000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a050000000aaaaaaaa
 000000000000000000000000000000000000000000000000aaaaaaaa0a000a000a000a00066666600aaaaaa066666660a0aaa0a00000000050500000a0000000
