@@ -1034,6 +1034,7 @@ function gen_map()
 	maze_worm()
 	place_flags()
 	carvedoors()
+	carvescuts()
 end
 
 -----------
@@ -1270,7 +1271,7 @@ function carvescuts()
 
 			if found then
 				calc_dist(x1,y1)
-						if dist_map[x2][y2]>20 then 
+						if dist_map[x2][y2]>20 then
 								add(drs,{x=_x,y=_y})
 								mset(_x,_y,3)
 							end
