@@ -1253,6 +1253,39 @@ repeat
 until #drs==0
 end
 
+function carvescuts()
+	--repeat
+			local x1,y1,x2,y2,found=1,1,1,1
+			local drs={}
+			for _x=0,15 do
+				for _y=0,15 do
+					if not is_walkable(_x,_y) then
+					local sig=get_sig(_x,_y)
+					found=false
+				if bcomp(sig,0b11000000,0b00001111) then
+					x1,y1,x2,y2,found=_x,_y-1,_x,_y+1,true
+				elseif bcomp(sig,0b00110000,0b00001111) then
+					x1,y1,x2,y2=_x+1,_y,_x-1,_y,true
+			end
+
+			if found then
+				calc_dist(x1,y1)
+						if dist_map[x2][y2]>20 then 
+								add(drs,{x=_x,y=_y})
+								mset(_x,_y,3)
+							end
+						end
+					end
+				end
+			end
+			--if #drs>0 then
+				--local d=get_rnd(drs)
+				--mset(d.x,d.y,2)
+					--grow_flag(d.x,d.y,d.f1)
+			--end
+	--until #drs==0
+end
+
 
 
 __gfx__
