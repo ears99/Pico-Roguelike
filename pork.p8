@@ -1027,24 +1027,40 @@ function gen_map()
 				mset(x,y,1)
 		end
 	end
+	--[[
+	todo:
+		* advancing
+		* no doors next to other doors
+		* entry not in an alcove
+		* monsters
+		* items
+		* decorations
+	]]
+
+	rooms={}
+	room_map=blank_map(0)
+	doors={}
+
 	gen_rooms()
 	maze_worm()
 	place_flags()
 	carvedoors()
 	carvescuts()
 	fillends()
+	startend()
+	install_doors()
 end
 
 -----------
 -- rooms --
 -----------
 function gen_rooms()
-	--fail max, room max
+	--fail max, room max, max width, max height
 	local fmax, rmax=5,4
-	--max width, max height
-	local mw,mh=6,6
+	local mw,mh=6,6 --5,5?
+
 		repeat
-			local r = rnd_room(5,5)
+			local r = rnd_room(mw,mh)
 		 if place_room(r) then
 		 	rmax-=1
 		 else
@@ -1074,7 +1090,7 @@ function rnd_room(max_w,max_h)
 end
 
 function place_room(r)
-	local cand={}
+	local cand,c={}
 
 	for _x=0,16-r.w do
 		for _y=0,16-r.h do
@@ -1086,10 +1102,11 @@ function place_room(r)
 	if #cand==0 then return false end
 	c=get_rnd(cand)
 	r.x,r.y=c.x,c.y
-
+	add(rooms,r)
 	for _x=0,r.w-1 do
 		for _y=0,r.h-1 do
 			 mset(_x+r.x,_y+r.y,2)
+				room_map[_x+r.x][_y+r.y]=#rooms
 			end
 		end
 		return true
@@ -1167,7 +1184,6 @@ function dig(x,y)
 			y+=diry[d]
 			step+=1
 	until d==8
-
 end
 
 --binary comparison
@@ -1214,8 +1230,8 @@ function grow_flag(_x,_y,flg)
 			for d=1,4 do
 				local dx,dy=c.x+dirx[d],c.y+diry[d]
 				if is_walkable(dx,dy) and flags[dx][dy]!=flg then
-					add(cand_new,{x=dx,y=dy})
 					flags[dx][dy]=flg
+					add(cand_new,{x=dx,y=dy})
 				end
 			end
 		end
@@ -1250,13 +1266,13 @@ repeat
 			mset(d.x,d.y,2)
 				grow_flag(d.x,d.y,d.f1)
 		end
-until #drs==0
+	until #drs==0
 end
- 
+
 function carvescuts()
+	local x1,y1,x2,y2,cut,found,drs=1,1,1,1,0
 	repeat
-		local x1,y1,x2,y2,cut,found=1,1,1,1,0
-		local drs={}
+			drs={}
 		for _x=0,15 do
 			for _y=0,15 do
 				if not is_walkable(_x,_y) then
@@ -1277,6 +1293,7 @@ function carvescuts()
 					end
 				end
 			end
+
 			if #drs>0 then
 				local d=get_rnd(drs)
 				mset(d.x,d.y,2)
@@ -1293,16 +1310,68 @@ function fillends()
 			for _y=0,15 do
 				if can_carve(_x,_y,true) then
 					add(cand,{x=_x,y=_y})
-				end 
-			end 
+				end
+			end
 		end
-		
+
 	for c in all(cand) do
 		mset(c.x,c.y,1)
-	end	
+	end
 	until #cand==0
 end
 
+function startend()
+	local high,low,px,py,ex,ey=0,9999
+	repeat
+		px,py=flr(rnd(16)),flr(rnd(16))
+	until is_walkable(px,py)
+
+	calc_dist(px,py)
+	for x=0,15 do
+		for y=0,15 do
+			local tmp=dist_map[x][y]
+			if is_walkable(x,y) and tmp>high then
+				px,py,high=x,y,tmp
+			end
+		end
+	end
+	calc_dist(px,py)
+	high=0
+	for x=0,15 do
+		for y=0,15 do
+			local tmp=dist_map[x][y]
+			if tmp>high and can_carve(x,y,false) then
+				ex,ey,high=x,y,tmp
+			end
+			if tmp>=0 and tmp<low and can_carve(x,y,false) then
+				px,py,low=x,y,tmp
+			end
+		end
+	end
+	--set starting stairs and player position
+	mset(px,py,14)
+	p_mob.x=px
+	p_mob.y=py
+	--set ending stairs
+	mset(ex,ey,15)
+end
+
+function install_doors()
+	for d in all(doors) do
+		if is_walkable(d.x,d.y) and is_door(d.x,d.y) then
+			mset(d.x,d.y,13)
+		end
+	end
+end
+
+function is_door(x,y)
+	for i=1,4 do
+		if in_bounds(x+dirx[i],y+diry[i]) and room_map[x+dirx[i]][y+diry[i]]!=0 then
+			return true
+		end
+	end
+	return false
+end
 
 __gfx__
 000000006660666000000000ddd0ddd0fff0fff000000000aaaaaaaa00aaa00000aaa00000000000000000000000000000aaa000a0aaa0a050000000aaaaaaaa
